@@ -24,11 +24,19 @@ public class Navnode{
     public List<Navnode> neighbours = new List<Navnode>();
     public List<int> connectedTriangles = new List<int>();
 
+    public int parentId{
+        get{
+            return _parentId;
+        }
+        set{
+            _parentId = value;
+        }
+    }
+
     public int fScore{
         get{
             return _fScore;
         }
-
         set{
             _fScore = value;
         }
@@ -38,7 +46,6 @@ public class Navnode{
         get{
             return _hScore;
         }
-
         set{
             _hScore = value;
         }
@@ -48,7 +55,6 @@ public class Navnode{
         get{
             return _gScore;
         }
-
         set{
             _gScore = value;
         }
@@ -57,6 +63,7 @@ public class Navnode{
     int _fScore;
     int _hScore;
     int _gScore;
+    int _parentId;
 
     public Navnode(int index){
         _nodeIndex = index;

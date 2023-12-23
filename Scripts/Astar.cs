@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Astar : MonoBehaviour{
-    Navnode[] gizmos;
+    List<Navnode> path = new List<Navnode>();
     Navnode hitNode;
 
     Navmesh navMesh;
@@ -27,12 +27,43 @@ public class Astar : MonoBehaviour{
         HashSet<Navnode> closedSet = new HashSet<Navnode>();
 
         openSet.Add(startNode);
-        return false;
 
         while(openSet.Count > 0){
+            Navnode currentNode = openSet[0];
+            float currentFCost = Vector3.Distance(currentNode.pos, startNode.pos) + Vector3.Distance(currentNode.pos, endNode.pos);
+
+            foreach(Navnode node in openSet){
+                float fCost = Vector3.Distance(node.pos, startNode.pos) + Vector3.Distance(node.pos, endNode.pos);
+
+                if(fCost < currentFCost || fCost == currentFCost && Vector3.Distance(node.pos, endNode.pos) < Vector3.Distance(currentNode.pos, endNode.pos)){
+                    currentNode = node;
+                }
+            }
+
+            openSet.Remove(currentNode);
+            closedSet.Add(currentNode);
+
+            if(currentNode == endNode){
+                RetracePath(startNode, endNode);
+                return true;
+            }
+
+            for(int i = 0; i < currentNode.neighbours.Count; i++){
+                if(closedSet.Contains(currentNode.neighbours[i]))
+                    continue;
+
+                float hCost = Vector3.Distance(currentNode.neighbours[i].pos, endNode.pos);
+                if(hCost < Vector3.Distance(currentNode.pos, endNode.pos) || !closedSet.Contains(currentNode.neighbours[i])){
+                    currentNode.neighbours[i].fScore = currentNode.fScore;
+                    currentNode.neighbours[i].parentId = currentNode.nodeIndex;
+                    if(!openSet.Contains(currentNode.neighbours[i]))
+                        openSet.Add(currentNode.neighbours[i]);
+                }
+            }
 
         }
-
+        
+        return false;
     }
 
     void Update(){
@@ -47,6 +78,19 @@ public class Astar : MonoBehaviour{
             }
         }
 
+    }
+
+    void RetracePath(Navnode startNode, Navnode endNode){
+        path = new List<Navnode>();   
+        Navnode currentNode;
+
+        currentNode = endNode;
+        while(currentNode != startNode){
+            path.Add(currentNode);
+            currentNode = navMesh[currentNode.parentId];
+        }
+
+        path.Reverse();
     }
 
     public Navnode FindClosestNode(Vector3 pos){
@@ -74,9 +118,11 @@ public class Astar : MonoBehaviour{
         if(hitNode == null)
             return;
         
-        for(int i = 0; i < hitNode.neighbours.Count; i++){
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(hitNode.neighbours[i].pos, 0.1f);
+        Gizmos.color = Color.red;
+        for(int i = 0; i < path.Count; i++){
+            Gizmos.DrawSphere(path[i].pos, 0.1f);
+            if(i > 0)
+                Gizmos.DrawLine(path[i].pos, path[i-1].pos);
         }
 
         Gizmos.color = Color.cyan;
