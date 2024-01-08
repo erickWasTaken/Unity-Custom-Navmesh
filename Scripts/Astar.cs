@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Astar : MonoBehaviour{
     List<Navnode> path = new List<Navnode>();
-    Navnode hitNode;
+    public Navnode hitNode;
 
     Navmesh navMesh;
 
@@ -30,12 +30,14 @@ public class Astar : MonoBehaviour{
 
         while(openSet.Count > 0){
             Navnode currentNode = openSet[0];
-            float currentFCost = Vector3.Distance(currentNode.pos, startNode.pos) + Vector3.Distance(currentNode.pos, endNode.pos);
+            currentNode.gScore = Vector3.Distance(currentNode.pos, startNode.pos);
+            currentNode.hScore = Vector3.Distance(currentNode.pos, endNode.pos);
 
             foreach(Navnode node in openSet){
-                float fCost = Vector3.Distance(node.pos, startNode.pos) + Vector3.Distance(node.pos, endNode.pos);
+                node.gScore = Vector3.Distance(node.pos, startNode.pos);
+                node.hScore = Vector3.Distance(node.pos, endNode.pos);
 
-                if(fCost < currentFCost || fCost == currentFCost && Vector3.Distance(node.pos, endNode.pos) < Vector3.Distance(currentNode.pos, endNode.pos)){
+                if(node.fScore < currentNode.fScore || node.fScore == currentNode.fScore && node.hScore < currentNode.hScore){
                     currentNode = node;
                 }
             }
@@ -52,32 +54,20 @@ public class Astar : MonoBehaviour{
                 if(closedSet.Contains(currentNode.neighbours[i]))
                     continue;
 
-                float hCost = Vector3.Distance(currentNode.neighbours[i].pos, endNode.pos);
-                if(hCost < Vector3.Distance(currentNode.pos, endNode.pos) || !closedSet.Contains(currentNode.neighbours[i])){
-                    currentNode.neighbours[i].fScore = currentNode.fScore;
-                    currentNode.neighbours[i].parentId = currentNode.nodeIndex;
-                    if(!openSet.Contains(currentNode.neighbours[i]))
-                        openSet.Add(currentNode.neighbours[i]);
+                Navnode currentNeighbour = currentNode.neighbours[i];
+                currentNeighbour.gScore = Vector3.Distance(currentNode.neighbours[i].pos, startNode.pos);
+                currentNeighbour.hScore = Vector3.Distance(currentNode.neighbours[i].pos, endNode.pos);
+
+                if(currentNeighbour.hScore < currentNode.hScore || !closedSet.Contains(currentNeighbour)){
+                    currentNeighbour.parentId = currentNode.nodeIndex;
+                    if(!openSet.Contains(currentNeighbour))
+                        openSet.Add(currentNeighbour);
                 }
             }
 
         }
         
         return false;
-    }
-
-    void Update(){
-        RaycastHit hit;
-        if(Input.GetMouseButtonUp(0)){
-            if(Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, Mathf.Infinity, probeMask)){
-                bool pathFound = FindPath(transform.position, hit.point);
-                hitNode = FindClosestNode(hit.point);
-                Debug.Log(hitNode.nodeIndex);
-                Debug.Log("nodeCount = " + navMesh.Count);
-                Debug.Log("verticesCount = " + navMesh.baseMesh.vertices.Length);
-            }
-        }
-
     }
 
     void RetracePath(Navnode startNode, Navnode endNode){
@@ -110,22 +100,21 @@ public class Astar : MonoBehaviour{
     }
 
     void OnDrawGizmos(){
-        Gizmos.color = Color.green;
-        if(navMesh == null){
-            return;
-        }
+        // if(navMesh == null){
+        //     return;
+        // }
         
         if(hitNode == null)
             return;
         
-        Gizmos.color = Color.red;
-        for(int i = 0; i < path.Count; i++){
-            Gizmos.DrawSphere(path[i].pos, 0.1f);
-            if(i > 0)
-                Gizmos.DrawLine(path[i].pos, path[i-1].pos);
-        }
+        // Gizmos.color = Color.red;
+        // for(int i = 0; i < path.Count; i++){
+        //     Gizmos.DrawSphere(path[i].pos, 0.1f);
+        //     if(i > 0)
+        //         Gizmos.DrawLine(path[i].pos, path[i-1].pos);
+        // }
 
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawSphere(hitNode.pos, 0.3f);
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(hitNode.pos, 0.3f);
     }
 }
